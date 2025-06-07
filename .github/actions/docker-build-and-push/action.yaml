@@ -81,3 +81,12 @@ runs:
 
         echo "🔐 Signing $IMAGE_TAG@$DIGEST"
         cosign sign --yes $IMAGE_TAG@$DIGEST
+
+    - name: Attest SBOM and provenance
+      shell: bash
+      env:
+        DIGEST: ${{ steps.build.outputs.digest }}
+        IMAGE_TAG: ${{ env.LOWERCASED }}:${{ inputs.image-tag }}
+      run: |
+        cosign attest --yes --type spdx $IMAGE_TAG@$DIGEST
+        cosign attest --yes --type slsaprovenance $IMAGE_TAG@$DIGEST
