@@ -1,2 +1,2 @@
 # minimal-dotnet
-Docker images for dotnet based on scratch without any additional dependencies
+Distroless docker images for dotnet built from scratch, with no additional dependencies
