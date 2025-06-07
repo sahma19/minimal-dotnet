@@ -1,0 +1,90 @@
+name: Dotnet - Build
+description: Build a dotnet project and push its image
+
+inputs:
+  solution:
+    description: "Path to a .sln file"
+    required: true
+
+  project:
+    description: "Path to a .csproj file (non-test)"
+    required: true
+
+  configuration:
+    description: "Name of the solution folder (used as image name, lower-cased)"
+    required: true
+
+  dockerfile:
+    description: "Path to the Dockerfile to build"
+    required: true
+
+  dry-run:
+    description: "Perform all actions but without pushing the image"
+    required: false
+    default: "false"
+
+  sdk-version:
+    description: "Complete SDK version x.y.zzz (optional override)"
+    required: false
+    default: ""
+
+  runtime-version:
+    description: "Complete runtime version x.y.z (optional override)"
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Load – global.json
+      shell: bash
+      run: |
+        DIR=$(dirname '${{ inputs.solution }}')
+        test -f "$DIR/global.json" || { echo "::error::global.json missing in $DIR"; exit 1; }
+        echo "DIRECTORY=$DIR"             | tee -a $GITHUB_ENV
+        echo "SDK=$(jq -r '.sdk.version'      "$DIR/global.json")" | tee -a $GITHUB_ENV
+        echo "RUNTIME=$(jq -r '.runtime.version' "$DIR/global.json")" | tee -a $GITHUB_ENV
+
+    - name: Overwrite – if given optional input
+      shell: bash
+      run: |
+        [ -n "${{ inputs.sdk-version }}" ] && echo "SDK=${{ inputs.sdk-version }}" | tee -a $GITHUB_ENV
+        [ -n "${{ inputs.runtime-version }}" ] && echo "RUNTIME=${{ inputs.runtime-version }}" | tee -a $GITHUB_ENV
+
+    - name: Derive Docker context
+      id: ctx
+      shell: bash
+      run: |
+        CONTEXT=$(dirname '${{ inputs.dockerfile }}')
+        echo "CONTEXT=$CONTEXT" | tee -a $GITHUB_ENV
+
+    - name: Resolve image version
+      id: ver
+      uses: ./.github/actions/docker-tag-image-with-version
+
+    - name: Resolve image name
+      shell: bash
+      run: |
+        img=$(echo '${{ inputs.configuration }}' | tr '[:upper:]' '[:lower:]')
+        echo "name=$img"          | tee -a $GITHUB_ENV
+        echo "version=${{ steps.ver.outputs.version }}" | tee -a $GITHUB_ENV
+
+    - name: Build image
+      uses: ./.github/actions/docker-build-and-push
+      with:
+        dockerfile:     ${{ inputs.dockerfile }}
+        docker-context: ${{ env.DIRECTORY }}
+        image-name:     ${{ env.name }}
+        image-tag:      ${{ env.version }}
+        dry-run:        ${{ inputs.dry-run }}
+        build-args: |
+          PROJECT=${{ inputs.project }}
+          SDK_VERSION=${{ env.SDK }}
+          RUNTIME_VERSION=${{ env.RUNTIME }}
+
+    - name: Scan image
+      uses: ./.github/actions/docker-scan
+      with:
+        image-name:  ${{ env.name }}
+        image-tag:   ${{ env.version }}
+        upload-sarif: ${{ github.event_name == 'push' && github.ref_name == 'main' }}

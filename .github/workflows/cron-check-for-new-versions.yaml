@@ -1,0 +1,48 @@
+name: Weekly .NET Scratch‐Image Build
+
+permissions:
+  contents: "read"
+  packages: "write"
+  id-token: "write"
+  attestations: "write"
+  actions: "read"
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 2 * * MON"
+
+jobs:
+
+  build-if-needed:
+    runs-on: ubuntu-latest
+    outputs:
+      DOTNET_RUNTIME_VERSION: ${{ steps.fetch.outputs.DOTNET_RUNTIME_VERSION }}
+      DOTNET_RUNTIME_MAJOR: ${{ steps.fetch.outputs.DOTNET_RUNTIME_MAJOR }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Fetch .NET 9.0 metadata
+        id: fetch
+        shell: bash
+        run: |
+          set -e
+          releases=$(curl -s https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/9.0/releases.json)
+
+          runtime_version=$(jq -r '."latest-release"' <<<"$releases")   # e.g. 9.0.5
+          major=${runtime_version%.*}                                   # e.g. 9.0
+
+          # write step outputs (new syntax)
+          echo "DOTNET_RUNTIME_VERSION=$runtime_version" >>"$GITHUB_OUTPUT"
+          echo "DOTNET_RUNTIME_MAJOR=$major"             >>"$GITHUB_OUTPUT"
+
+  build-minimal-docker-image:
+    needs: build-if-needed
+    uses: ./.github/workflows/docker-image.yaml
+    with:
+      base-image-tag:      ${{ needs.build-if-needed.outputs.DOTNET_RUNTIME_VERSION }}
+      publish-version:     ${{ needs.build-if-needed.outputs.DOTNET_RUNTIME_VERSION }}
+      publish-major-version: ${{ needs.build-if-needed.outputs.DOTNET_RUNTIME_MAJOR }}
+      dry-run: 'false'
+      is-dependabot: 'false'

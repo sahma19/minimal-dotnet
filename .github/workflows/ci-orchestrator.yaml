@@ -1,0 +1,59 @@
+name: CI orchestrator
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      dry-run: ${{ github.event_name != 'push' || github.ref_name != 'main' }}
+      is-dependabot: ${{ github.event_name == 'pull_request' && startsWith(github.event.pull_request.head.ref, 'dependabot/') }}
+
+    steps:
+      - name: Setup variables
+        run: exit 0
+
+  build-examples:
+    permissions:
+      contents: "read"
+      packages: "write"
+      id-token: "write"
+      attestations: "write"
+      actions: "read"
+      security-events: "write"
+    needs: setup
+    uses: ./.github/workflows/solutions-build.yaml
+    secrets: inherit
+    with:
+      dry-run: ${{ needs.setup.outputs.dry-run }}
+      is-dependabot: ${{ needs.setup.outputs.is-dependabot }}
+
+  dependabot-validate:
+    uses: ./.github/workflows/dependabot-validate.yaml
+    secrets: inherit
+
+  allow-merge-ci-orchestrator:
+    runs-on: ubuntu-latest
+    needs:
+      [
+        build-examples,
+        dependabot-validate,
+      ]
+    if: always()
+    steps:
+      - name: Print needs
+        run: |
+          echo '${{ toJSON(needs) }}'
+      - name: Verify if merge is allowed
+        run: |
+          verification=$(echo '${{ toJSON(needs) }}' | jq '.[] | select(.result != "success") | select(.result != "skipped")')
+          if [[ ! -z "$verification" ]]; then
+              echo "Failed"
+              exit 1
+          fi

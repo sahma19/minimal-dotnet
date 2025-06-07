@@ -1,0 +1,73 @@
+name: Build Docker images for all dotnet projects
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        required: true
+        type: string
+      is-dependabot:
+        required: true
+        type: string
+
+permissions:
+  contents: "read"
+  packages: "write"
+  id-token: "write"
+  attestations: "write"
+  actions: "read"
+  security-events: "write"
+
+jobs:
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      builds: ${{ env.builds }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Build matrix
+        shell: bash
+        run: |
+          for sol in $(find examples -maxdepth 2 -name '*.sln'); do
+            dir=$(dirname "$sol")
+            dockerfile="$dir/Dockerfile"
+            cfg=$(basename "$dir")
+          
+            sdk=$(jq -rce '.sdk.version'      "$dir/global.json")
+            runtime=$(jq -rce '.runtime.version' "$dir/global.json")
+          
+            grep -Eo '"[^"]+\.csproj"' "$sol" | tr -d '"' \
+              | grep -Ev '(Test|test|Tests)\.csproj$' | while read -r proj; do
+              rel=$(printf '%s' "$proj" | sed 's|\\|/|g')
+              absproj=$(realpath "$dir/$rel")
+            
+              printf '{"solution":"%s","project":"%s","configuration":"%s","dockerfile":"%s","sdkVersion":"%s","runtimeVersion":"%s"}\n' \
+                    "$sol" "$absproj" "$cfg" "$dockerfile" "$sdk" "$runtime"
+            done
+          done | jq -sc > /tmp/matrix.json
+            
+          echo "builds=$(cat /tmp/matrix.json)" >> "$GITHUB_ENV"
+
+
+  build:
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build: ${{ fromJson(needs.generate-matrix.outputs.builds) }}
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Dotnet – Build & push
+        uses: ./.github/actions/dotnet-build
+        with:
+          solution:        ${{ matrix.build.solution }}
+          project:         ${{ matrix.build.project }}
+          configuration:   ${{ matrix.build.configuration }}
+          dockerfile:      ${{ matrix.build.dockerfile }}
+          dry-run:         ${{ inputs.dry-run }}
+          sdk-version:     ${{ matrix.build.sdkVersion }}
+          runtime-version: ${{ matrix.build.runtimeVersion }}
