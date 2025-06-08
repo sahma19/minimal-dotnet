@@ -61,8 +61,10 @@ runs:
       uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
       with:
         images: ${{ env.LOWERCASED }}
+        labels: |
+          org.opencontainers.image.title=${{ env.LOWERCASED }}
         tags: |
-          type=raw,value=${{ github.sha }},format=short,enable=${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          type=sha,enable=${{ github.event_name == 'push' && github.ref_name == 'main' }}
           type=raw,value=${{ github.sha }}-pr-${{ github.event.pull_request.number }},enable=${{ github.event_name == 'pull_request' }}
 
     - name: Build & push via Buildx
