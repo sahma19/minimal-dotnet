@@ -1,0 +1,54 @@
+name: SLSA Callback for .NET Build
+inputs:
+  slsa-workflow-inputs:
+    description: "JSON inputs"
+    required: true
+  slsa-layout-file:
+    description: "File path for provenance layout"
+    required: true
+  slsa-workflow-secret1:
+    description: "Optional secret (e.g. GH token)"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Extract Inputs
+      id: parsed
+      shell: bash
+      run: |
+        echo "${{ inputs.slsa-workflow-inputs }}" > inputs.json
+        cat inputs.json | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> $GITHUB_ENV
+
+    - name: Run dotnet-build logic
+      uses: ./.github/actions/dotnet-build
+      with:
+        solution:        ${{ env.solution }}
+        project:         ${{ env.project }}
+        configuration:   ${{ env.configuration }}
+        dockerfile:      ${{ env.dockerfile }}
+        dry-run:         ${{ env.dry-run }}
+        sdk-version:     ${{ env.sdkVersion }}
+        runtime-version: ${{ env.runtimeVersion }}
+
+    - name: Write layout file
+      shell: bash
+      run: |
+        cat <<EOF > ${{ inputs.slsa-layout-file }}
+        {
+          "version": 1,
+          "attestations": [
+            {
+              "name": "dotnet-image",
+              "subjects": [
+                {
+                  "name": "ghcr.io/${{ github.repository_owner }}/${{ env.configuration }}:${{ env.version }}",
+                  "digest": {
+                    "sha256": "$(sha256sum some-output-file | cut -d ' ' -f1)"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+        EOF

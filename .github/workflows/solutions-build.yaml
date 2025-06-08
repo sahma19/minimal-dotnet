@@ -61,13 +61,13 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Dotnet – Build & push
-        uses: ./.github/actions/dotnet-build
+      - name: Dotnet – Build via SLSA
+        uses: ./.github/workflows/builder_dotnet_slsa3.yml
         with:
           solution:        ${{ matrix.build.solution }}
           project:         ${{ matrix.build.project }}
           configuration:   ${{ matrix.build.configuration }}
           dockerfile:      ${{ matrix.build.dockerfile }}
-          dry-run:         ${{ inputs.dry-run }}
           sdk-version:     ${{ matrix.build.sdkVersion }}
           runtime-version: ${{ matrix.build.runtimeVersion }}
+          dry-run:         ${{ inputs.dry-run }}
