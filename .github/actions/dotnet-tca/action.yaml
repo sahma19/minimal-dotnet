@@ -1,24 +1,33 @@
 name: SLSA Callback for .NET Build
+
 inputs:
   slsa-workflow-inputs:
-    description: "JSON inputs"
+    description: "JSON string of inputs"
     required: true
   slsa-layout-file:
-    description: "File path for provenance layout"
+    description: "Path to the layout file"
     required: true
   slsa-workflow-secret1:
-    description: "Optional secret (e.g. GH token)"
+    description: "GitHub token (or other secret)"
     required: false
 
 runs:
   using: "composite"
   steps:
-    - name: Extract Inputs
-      id: parsed
+    - name: Parse JSON inputs into env
+      id: parse
       shell: bash
       run: |
-        printf '%s' '${{ inputs.slsa-workflow-inputs }}' > inputs.json
-        jq -r 'to_entries[] | "\(.key)=\(.value)"' inputs.json >> $GITHUB_ENV
+        echo "Parsing inputs.json"
+        echo '${{ inputs.slsa-workflow-inputs }}' > inputs.json
+
+        if ! jq empty inputs.json 2>/dev/null; then
+          echo "::error::Invalid JSON in slsa-workflow-inputs"
+          cat inputs.json
+          exit 1
+        fi
+
+        jq -r 'to_entries[] | "\(.key)=\(.value | tostring)"' inputs.json >> "$GITHUB_ENV"
 
     - name: Run dotnet-build logic
       uses: ./.github/actions/dotnet-build
@@ -28,13 +37,14 @@ runs:
         configuration:   ${{ env.configuration }}
         dockerfile:      ${{ env.dockerfile }}
         dry-run:         ${{ env.dry-run }}
-        sdk-version:     ${{ env.sdkVersion }}
-        runtime-version: ${{ env.runtimeVersion }}
+        sdk-version:     ${{ env.sdk-version }}
+        runtime-version: ${{ env.runtime-version }}
 
-    - name: Write layout file
+    - name: Write SLSA layout file
       shell: bash
       run: |
-        cat <<EOF > ${{ inputs.slsa-layout-file }}
+        mkdir -p "$(dirname "${{ inputs.slsa-layout-file }}")"
+        cat <<EOF > "${{ inputs.slsa-layout-file }}"
         {
           "version": 1,
           "attestations": [
@@ -44,7 +54,7 @@ runs:
                 {
                   "name": "ghcr.io/${{ github.repository_owner }}/${{ env.configuration }}:${{ env.version }}",
                   "digest": {
-                    "sha256": "$(sha256sum some-output-file | cut -d ' ' -f1)"
+                    "sha256": "placeholder"
                   }
                 }
               ]
