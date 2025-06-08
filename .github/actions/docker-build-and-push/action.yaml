@@ -1,42 +1,43 @@
 name: Build and push docker containers to ghcr.io
 description: |
-  Build a Docker image (+ SBOM, provenance), tag it, and push.
+  This action will ensure the image name is lowercased and that any artifacts are available.
 
 inputs:
   dockerfile:
-    description: Path to Dockerfile
-    required: true
-  repo-name:
-    description: repo part (e.g. `foo-api`)
+    description: The path of the Dockerfile to build
     required: true
   image-name:
-    description: name of the project to be built
+    description: "The full image name excluding ghcr.io/<my_container>"
+    required: true
+  image-tag:
+    description: "The image tag"
     required: true
   docker-context:
-    description: build context
+    description: The path for the docker build context, defaults to '.'
     required: false
     default: .
   dry-run:
-    description: skip push
+    description: Perform all actions but without committing changes
     required: false
     default: "false"
   build-args:
-    description: build-arg list
+    description: List of build-time variables
     required: false
-outputs:
-  image:
-    description: The full image name (including registry)
-    value: ghcr.io/${{ github.repository_owner }}/${{ inputs.repo-name }}
-  digest:
-    description: The image digest produced by buildx
-    value: ${{ steps.buildx.outputs.digest }}
-  image_with_digest:
-    description: The image reference with digest
-    value: ghcr.io/${{ github.repository_owner }}/${{ inputs.repo-name }}@${{ steps.buildx.outputs.digest }}
 
 runs:
   using: composite
   steps:
+    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      name: Download available artifacts # this supports use of artifacts (currently only frontends)
+      with:
+        path: artifacts/
+
+    - name: Resolve container image name
+      shell: bash
+      run: |
+        FULL="ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}"
+        echo "LOWERCASED=$(echo "$FULL" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
 
@@ -50,34 +51,16 @@ runs:
         username: ${{ github.actor }}
         password: ${{ github.token }}
         ecr: false
-        
-    - name: Resolve container image name
-      shell: bash
-      run: echo "LOWERCASED=$(echo 'ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-    - name: Extract metadata (tags & labels)
-      id: meta
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       with:
-        images: ${{ env.LOWERCASED }}
-        labels: |
-          org.opencontainers.image.title=${{ inputs.image-name }}
-        tags: |
-          type=raw,value={{sha}},format=short,enable=${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          type=raw,value={{sha}}-pr.${{ github.event.pull_request.number }},enable=${{ github.event_name == 'pull_request' }}
-          type=raw,value={{sha}},format=short,enable=${{ github.event_name == 'workflow_dispatch' && github.ref_name == 'main' }}
-          type=raw,value={{sha}}.{{branch}},enable=${{ github.event_name == 'workflow_dispatch' && github.ref_name != 'main' }}
-
-    - name: Build & push via Buildx
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # 6.18.0
-      id: buildx
-      with:
-        build-args: ${{ inputs.build-args }}
         context: ${{ inputs.docker-context }}
         file: ${{ inputs.dockerfile }}
-        labels: ${{ steps.meta.outputs.labels }}
-        provenance: mode=max
-        pull: true
         push: ${{ inputs.dry-run != 'true' }}
+        pull: true
+        tags: ${{ env.LOWERCASED }}:${{ inputs.image-tag }}
+        build-args: ${{ inputs.build-args }}
+        provenance: mode=max
         sbom: true
-        tags: ${{ steps.meta.outputs.tags }}
