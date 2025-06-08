@@ -49,12 +49,12 @@ runs:
           "version": 1,
           "attestations": [
             {
-              "name": "dotnet-image",
+              "name": "${{ env.configuration }}-${{ env.version }}.build.slsa"",
               "subjects": [
                 {
                   "name": "ghcr.io/${{ github.repository_owner }}/${{ env.configuration }}:${{ env.version }}",
                   "digest": {
-                    "sha256": "placeholder"
+                    "sha256": "${{ steps.build.outputs.digest }}"
                   }
                 }
               ]
