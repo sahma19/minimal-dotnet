@@ -57,7 +57,8 @@ jobs:
       contents: write # For asset uploads.
       packages: write # For package uploads.
       actions: read # For the entrypoint.
-    secrets: inherit
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
     uses: ./.github/workflows/builder_dotnet_slsa3.yml
     strategy:
       fail-fast: false

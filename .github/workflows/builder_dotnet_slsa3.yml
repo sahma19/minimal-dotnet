@@ -46,5 +46,5 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/delegator_generic_slsa3.yml@v2.1.0
     with:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
-    secrets: inherit
-
+    secrets:
+      secret1: ${{ secrets.github-token }}
