@@ -49,7 +49,7 @@ runs:
 
     - name: Resolve image name
       shell: bash
-      run: echo "IMAGE_NAME=$(basename $(dirname '${{ inputs.project }}'))" >> $GITHUB_ENV
+      run: echo "IMAGE_NAME=$(basename '${{ inputs.project }}' .csproj)" >> $GITHUB_ENV
 
     - name: Resolve image tags
       uses: ./.github/actions/docker-tag-image-with-version
