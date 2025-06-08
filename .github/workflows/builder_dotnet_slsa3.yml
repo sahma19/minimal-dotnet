@@ -52,3 +52,28 @@ jobs:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
     secrets:
       secret1: ${{ secrets.github-token }}
+
+  publish:
+    needs: run
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to upload to GitHub Release
+
+    steps:
+      - name: Securely download attestations
+        uses: ./.github/actions/secure-attestations-download
+        with:
+          name: ${{ needs.run.outputs.attestations-download-name }}
+          sha256: ${{ needs.run.outputs.attestations-download-sha256 }}
+          path: ./attestations
+
+      - name: Upload attestations to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          find ./attestations -type f | tee ./FILES
+          while IFS= read -r file; do
+            gh release upload "$TAG" "$file"
+          done < FILES
