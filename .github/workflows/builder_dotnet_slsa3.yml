@@ -44,7 +44,7 @@ jobs:
           slsa-build-action-path: ".github/actions/dotnet-tca"
           slsa-workflow-inputs: ${{ toJson(inputs) }}
           slsa-workflow-masked-inputs: project
-          slsa-version: 'v1.1'
+          slsa-version: 'v1.0'
 
   run:
     needs: setup
