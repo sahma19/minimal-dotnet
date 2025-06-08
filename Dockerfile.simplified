@@ -1,0 +1,39 @@
+ARG SDK_VERSION
+ARG RUNTIME_VERSION
+ARG PROJECT
+
+FROM mcr.microsoft.com/dotnet/sdk:${SDK_VERSION} AS prepare
+WORKDIR /src/
+COPY . .
+RUN <<EOR
+grep -q "<AssemblyName>" ${PROJECT}
+if [ $? -eq 0 ]; then
+    sed -i ${PROJECT} -e "s|<AssemblyName>.*</AssemblyName>|<AssemblyName>main</AssemblyName>|"
+else
+    sed -i ${PROJECT} -e "s|</PropertyGroup>|<AssemblyName>main</AssemblyName></PropertyGroup>|"
+fi
+EOR
+RUN dotnet tool restore || true
+
+RUN dotnet restore ${PROJECT}
+
+COPY . ./
+
+RUN dotnet build ${PROJECT} --no-restore
+
+FROM prepare AS build
+
+RUN dotnet build --no-restore -c Release
+
+WORKDIR /src
+RUN dotnet publish --no-restore -c Release -o /app/publish
+WORKDIR /app/publish
+RUN rm -f appsettings.json appsettings.*.json || true
+
+FROM ghcr.io/sahma19/minimal-dotnet:runtime-deps-${RUNTIME_VERSION} AS runtime
+
+WORKDIR /app
+COPY --from=build --chown=$USER:$USER /app/publish ./
+EXPOSE 8080
+EXPOSE 8081
+ENTRYPOINT ["/app/main"]

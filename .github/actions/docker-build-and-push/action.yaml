@@ -27,10 +27,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      name: Download available artifacts # this supports use of artifacts (currently only frontends)
-      with:
-        path: artifacts/
 
     - name: Resolve container image name
       shell: bash
@@ -62,5 +58,3 @@ runs:
         pull: true
         tags: ${{ env.LOWERCASED }}:${{ inputs.image-tag }}
         build-args: ${{ inputs.build-args }}
-        provenance: mode=max
-        sbom: true
