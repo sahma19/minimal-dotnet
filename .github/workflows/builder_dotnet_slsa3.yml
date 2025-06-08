@@ -13,6 +13,16 @@ on:
       rekor-log-public: { required: false, type: boolean, default: true }
     secrets:
       github-token: { required: true }
+    outputs:
+      attestations-download-name:
+        description: "Name of downloaded attestation artifact"
+        value: ${{ jobs.run.outputs.attestations-download-name }}
+      attestations-download-sha256:
+        description: "SHA256 of downloaded attestation"
+        value: ${{ jobs.run.outputs.attestations-download-sha256 }}
+      build-artifacts-outputs:
+        description: "JSON string containing build artifact download info"
+        value: ${{ jobs.run.outputs.build-artifacts-outputs }}
 
 jobs:
   setup:
@@ -40,10 +50,6 @@ jobs:
 
   run:
     needs: setup
-    outputs:
-      attestations-download-name: ${{ steps.build.outputs.attestations-download-name }}
-      attestations-download-sha256: ${{ steps.build.outputs.attestations-download-sha256 }}
-      build-artifacts-outputs: ${{ steps.build.outputs.build-artifacts-outputs }}
     permissions:
       contents: "write"
       packages: "write"
@@ -62,22 +68,23 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Needed to upload to GitHub Release
-
+      contents: write
     steps:
-      - name: Securely download attestations
-        uses: ./.github/actions/secure-attestations-download
+      - name: Download provenance
+        uses: slsa-framework/slsa-github-generator/actions/delegator/secure-attestations-download@v1.8.0
         with:
           name: ${{ needs.run.outputs.attestations-download-name }}
           sha256: ${{ needs.run.outputs.attestations-download-sha256 }}
-          path: ./attestations
 
-      - name: Upload attestations to GitHub Release
+      - name: Upload provenance to release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.github-token }}
+          OUT: ${{ needs.run.outputs.attestations-download-name }}
+          REF: ${{ github.ref }}
         run: |
-          find ./attestations -type f | tee ./FILES
+          set -euo pipefail
+          tag="$(echo $REF | cut -d '/' -f3-)"
+          find "$OUT" -type f | tee ./FILES
           while IFS= read -r file; do
-            gh release upload "$TAG" "$file"
+              gh -R "$GITHUB_REPOSITORY" release upload "$tag" "$file"
           done < FILES
