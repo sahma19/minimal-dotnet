@@ -22,6 +22,7 @@ jobs:
       contents: write # For asset uploads.
       packages: write # For package uploads.
       actions: read # For the entrypoint.
+    secrets: inherit
     outputs:
       slsa-token: ${{ steps.slsa-setup.outputs.slsa-token }}
     steps:
@@ -46,5 +47,5 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/delegator_generic_slsa3.yml@v2.1.0
     with:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
-    secrets:
-      secret1: ${{ github.token }}
+    secrets: inherit
+
