@@ -71,9 +71,3 @@ runs:
           PROJECT=${{ inputs.project }}
           SDK_VERSION=${{ env.SDK }}
           RUNTIME_VERSION=${{ env.RUNTIME }}
-
-    - name: Scan image
-      uses: ./.github/actions/docker-scan
-      with:
-        image-name: ${{ steps.build.outputs.image_with_digest }}
-        upload-sarif: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
