@@ -18,10 +18,12 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # For signing.
-      contents: write # For asset uploads.
-      packages: write # For package uploads.
-      actions: read # For the entrypoint.
+      contents: "write"
+      packages: "write"
+      id-token: "write"
+      attestations: "write"
+      actions: "read"
+      security-events: "write"
     outputs:
       slsa-token: ${{ steps.slsa-setup.outputs.slsa-token }}
     steps:
@@ -39,10 +41,12 @@ jobs:
   run:
     needs: setup
     permissions:
-      id-token: write # For signing.
-      contents: write # For asset uploads.
-      packages: write # For package uploads.
-      actions: read # For the entrypoint.
+      contents: "write"
+      packages: "write"
+      id-token: "write"
+      attestations: "write"
+      actions: "read"
+      security-events: "write"
     uses: slsa-framework/slsa-github-generator/.github/workflows/delegator_generic_slsa3.yml@v2.1.0
     with:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
