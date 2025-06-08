@@ -29,7 +29,6 @@ jobs:
       security-events: "write"
     needs: setup
     uses: ./.github/workflows/solutions-build.yaml
-    secrets: inherit
     with:
       dry-run: ${{ needs.setup.outputs.dry-run }}
       is-dependabot: ${{ needs.setup.outputs.is-dependabot }}
