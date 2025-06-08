@@ -22,7 +22,7 @@ COPY . ./
 RUN dotnet build ${PROJECT} --no-restore
 
 FROM prepare AS build
-WORKDIR /
+WORKDIR /src
 RUN dotnet build --no-restore -c Release
 
 WORKDIR /src
