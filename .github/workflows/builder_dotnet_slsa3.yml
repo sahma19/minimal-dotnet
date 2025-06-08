@@ -40,6 +40,10 @@ jobs:
 
   run:
     needs: setup
+    outputs:
+      attestations-download-name: ${{ steps.build.outputs.attestations-download-name }}
+      attestations-download-sha256: ${{ steps.build.outputs.attestations-download-sha256 }}
+      build-artifacts-outputs: ${{ steps.build.outputs.build-artifacts-outputs }}
     permissions:
       contents: "write"
       packages: "write"
