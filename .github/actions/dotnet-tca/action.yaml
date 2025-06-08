@@ -17,8 +17,8 @@ runs:
       id: parsed
       shell: bash
       run: |
-        echo "${{ inputs.slsa-workflow-inputs }}" > inputs.json
-        cat inputs.json | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> $GITHUB_ENV
+        printf '%s' '${{ inputs.slsa-workflow-inputs }}' > inputs.json
+        jq -r 'to_entries[] | "\(.key)=\(.value)"' inputs.json >> $GITHUB_ENV
 
     - name: Run dotnet-build logic
       uses: ./.github/actions/dotnet-build
