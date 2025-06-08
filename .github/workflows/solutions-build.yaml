@@ -53,10 +53,12 @@ jobs:
   build:
     needs: generate-matrix
     permissions:
-      id-token: write # For signing.
-      contents: write # For asset uploads.
-      packages: write # For package uploads.
-      actions: read # For the entrypoint.
+      contents: "write"
+      packages: "write"
+      id-token: "write"
+      attestations: "write"
+      actions: "read"
+      security-events: "write"
     secrets:
       github-token: ${{ secrets.GITHUB_TOKEN }}
     uses: ./.github/workflows/builder_dotnet_slsa3.yml
