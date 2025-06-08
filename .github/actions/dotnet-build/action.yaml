@@ -60,6 +60,7 @@ runs:
       uses: ./.github/actions/docker-build-and-push
       with:
         dockerfile: Dockerfile
+        repo-name: ${{ env.IMAGE_NAME }}
         image-name: ${{ env.IMAGE_NAME }}
         docker-context: .
         dry-run: ${{ inputs.dry-run }}
