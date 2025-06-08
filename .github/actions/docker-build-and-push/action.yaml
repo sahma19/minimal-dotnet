@@ -1,4 +1,3 @@
-# ./.github/actions/docker-build-and-push/action.yml
 name: Build and push docker containers to ghcr.io
 description: |
   Build a Docker image (+ SBOM, provenance), tag it, and push.
@@ -64,8 +63,10 @@ runs:
         labels: |
           org.opencontainers.image.title=${{ env.LOWERCASED }}
         tags: |
-          type=sha,enable=${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          type=raw,value=${{ github.sha }}-pr-${{ github.event.pull_request.number }},enable=${{ github.event_name == 'pull_request' }}
+          type=raw,value={{sha}},format=short,enable=${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          type=raw,value={{sha}}-pr.${{ github.event.pull_request.number }},enable=${{ github.event_name == 'pull_request' }}
+          type=raw,value={{sha}},format=short,enable=${{ github.event_name == 'workflow_dispatch' && github.ref_name == 'main' }}
+          type=raw,value={{sha}}.{{branch}},enable=${{ github.event_name == 'workflow_dispatch' && github.ref_name != 'main' }}
 
     - name: Build & push via Buildx
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # 6.18.0
