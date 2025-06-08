@@ -33,7 +33,8 @@ jobs:
             solution_dir=$(dirname "$solution")
             grep -Eo '"[^"]+\.csproj"' "$solution" | tr -d '"' \
               | grep -Ev '/?(Test|test|Tests)[^/]*\.csproj$' | while read -r project_path; do
-              normalized_project_path="$solution_dir/$project_path"
+              rel=$(printf '%s' "$project_path" | sed 's|\\|/|g')
+              normalized_project_path="$solution_dir/$rel"
               printf '{"solution":"%s","project":"%s"}\n' "$solution" "$normalized_project_path"
             done
           done | jq -sc > /tmp/matrix.json
