@@ -22,7 +22,6 @@ jobs:
       contents: write # For asset uploads.
       packages: write # For package uploads.
       actions: read # For the entrypoint.
-    secrets: inherit
     outputs:
       slsa-token: ${{ steps.slsa-setup.outputs.slsa-token }}
     steps:
