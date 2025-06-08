@@ -18,12 +18,14 @@ permissions:
   contents: read
   id-token: write
   packages: write
+  actions: read
 
 jobs:
   setup:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
     outputs:
       slsa-token: ${{ steps.slsa-setup.outputs.slsa-token }}
     steps:
@@ -40,6 +42,9 @@ jobs:
 
   run:
     needs: setup
+    permissions:
+      contents: read
+      actions: read
     uses: slsa-framework/slsa-github-generator/.github/workflows/delegator_generic_slsa3.yml@v2.1.0
     with:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
