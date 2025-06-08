@@ -1,8 +1,8 @@
 ARG SDK_VERSION
 ARG RUNTIME_VERSION
-ARG PROJECT
 
 FROM mcr.microsoft.com/dotnet/sdk:${SDK_VERSION} AS prepare
+ARG PROJECT
 WORKDIR /src/
 COPY . .
 RUN <<EOR
