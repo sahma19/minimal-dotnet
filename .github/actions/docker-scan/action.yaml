@@ -20,9 +20,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Resolve container image name
-      shell: bash
-      run: echo "LOWERCASED=$(echo 'ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
     - name: Log in to the Container registry
       uses: docker/login-action@3da7dc6e2b31f99ef2cb9fb4c50fb0971e0d0139
@@ -36,24 +33,18 @@ runs:
       uses: anchore/scan-action@v6
       id: scan
       with:
-        image: ${{ env.LOWERCASED }}:${{ inputs.image-tag }}
+        image: ${{ inputs.image-name }}:${{ inputs.image-tag }}
         fail-build: false
         output-format: sarif
-        output-file: results.sarif
-
+  
     - name: Print scanning summary
       shell: bash
       run: |
-        pipx install sarif-tools
-        {
-          echo \`\`\`
-          sarif summary results.sarif
-          echo \`\`\`
-        } >> $GITHUB_STEP_SUMMARY
+        sarif summary "${{ steps.scan.outputs.sarif }}"
 
     - name: Upload sarif report
       if: ${{ inputs.upload-sarif == 'true' }}
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: results.sarif
+        sarif_file: ${{ steps.scan.outputs.sarif }}
         category: ${{ inputs.grype-category }}

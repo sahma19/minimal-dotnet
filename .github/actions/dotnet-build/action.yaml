@@ -59,6 +59,7 @@ runs:
       run: cp ./Dockerfile.simplified ./Dockerfile
 
     - name: Build image
+      id: build
       uses: ./.github/actions/docker-build-and-push
       with:
         dockerfile: Dockerfile
@@ -74,6 +75,6 @@ runs:
     - name: Scan image
       uses: ./.github/actions/docker-scan
       with:
-        image-name:  ${{ env.IMAGE_NAME }}
-        image-tag:   ${{ env.version }}
+        image-name:  ${{ needs.build.outputs.image }}
+        image-tag:   ${{ needs.build.outputs.digest }}
         upload-sarif: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
