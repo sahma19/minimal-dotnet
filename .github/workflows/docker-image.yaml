@@ -37,9 +37,6 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         lfs: 'true'
-        
-    - name: Install Cosign
-      uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
@@ -121,17 +118,3 @@ jobs:
         tags: |
           ghcr.io/${{ github.repository }}:aspnet-globalization-${{ inputs.publish-major-version }}
           ghcr.io/${{ github.repository }}:aspnet-globalization-${{ inputs.publish-version }}
-
-    - name: Sign the images with GitHub OIDC Token
-      shell: bash
-      env:
-        DIGEST: ${{ steps.build-and-push-aspnet-globalization.outputs.digest }}
-      run: |
-        TAGS="ghcr.io/${{ github.repository }}:aspnet-globalization-${{ inputs.publish-major-version }} ghcr.io/${{ github.repository }}:aspnet-globalization-${{ inputs.publish-version }}"
-        
-        images=""
-        for tag in ${TAGS}; do
-          images+="${tag}@${DIGEST} "
-        done
-        
-        cosign sign --yes ${images}
