@@ -31,6 +31,9 @@ outputs:
   digest:
     description: The image digest produced by buildx
     value: ${{ steps.buildx.outputs.digest }}
+  image_with_digest:
+    description: The image reference with digest
+    value: ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}@${{ steps.buildx.outputs.digest }}
 
 runs:
   using: composite
