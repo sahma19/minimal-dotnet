@@ -25,7 +25,7 @@ FROM prepare AS build
 RUN dotnet build ${PROJECT} --no-restore -c Release
 
 WORKDIR /src
-RUN dotnet publish --no-restore -c Release -o /app/publish
+RUN dotnet publish ${PROJECT} --no-restore -c Release -o /app/publish
 WORKDIR /app/publish
 RUN rm -f appsettings.json appsettings.*.json || true
 
