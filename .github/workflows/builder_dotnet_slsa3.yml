@@ -47,4 +47,4 @@ jobs:
     with:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
     secrets:
-      secret1: ${{ secrets.github-token }}
+      secret1: ${{ github.token }}
