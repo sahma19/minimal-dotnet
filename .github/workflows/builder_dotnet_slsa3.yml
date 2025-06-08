@@ -14,15 +14,12 @@ on:
     secrets:
       github-token: { required: true }
     outputs:
-      attestations-download-name:
-        description: "Name of downloaded attestation artifact"
+      provenance-download-name:
+        description: "The name of the provenance attestation uploaded to the workflow run."
         value: ${{ jobs.run.outputs.attestations-download-name }}
-      attestations-download-sha256:
-        description: "SHA256 of downloaded attestation"
+      provenance-download-sha256:
+        description: "The sha256 of the provenance attestation uploaded to the workflow run."
         value: ${{ jobs.run.outputs.attestations-download-sha256 }}
-      build-artifacts-outputs:
-        description: "JSON string containing build artifact download info"
-        value: ${{ jobs.run.outputs.build-artifacts-outputs }}
 
 jobs:
   setup:
@@ -47,6 +44,7 @@ jobs:
           slsa-build-action-path: ".github/actions/dotnet-tca"
           slsa-workflow-inputs: ${{ toJson(inputs) }}
           slsa-workflow-masked-inputs: project
+          slsa-version: 'v1.1'
 
   run:
     needs: setup
@@ -62,28 +60,3 @@ jobs:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
     secrets:
       secret1: ${{ secrets.github-token }}
-
-  publish:
-    needs: run
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download provenance
-        uses: slsa-framework/slsa-github-generator/actions/delegator/secure-attestations-download@v2.1.0
-        with:
-          name: ${{ needs.run.outputs.attestations-download-name }}
-          sha256: ${{ needs.run.outputs.attestations-download-sha256 }}
-
-      - name: Upload provenance to release
-        env:
-          GH_TOKEN: ${{ secrets.github-token }}
-          OUT: ${{ needs.run.outputs.attestations-download-name }}
-          REF: ${{ github.ref }}
-        run: |
-          set -euo pipefail
-          tag="$(echo $REF | cut -d '/' -f3-)"
-          find "$OUT" -type f | tee ./FILES
-          while IFS= read -r file; do
-              gh -R "$GITHUB_REPOSITORY" release upload "$tag" "$file"
-          done < FILES
