@@ -27,7 +27,6 @@ inputs:
 runs:
   using: composite
   steps:
-
     - name: Resolve container image name
       shell: bash
       run: |
@@ -48,6 +47,12 @@ runs:
         password: ${{ github.token }}
         ecr: false
 
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@69f6fc9d46f2f8bf0d5491e4aabe0bb8c6a4678a # v4.0.1
+      with:
+        images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+
     - name: Build and push Docker image
       id: build
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -56,5 +61,13 @@ runs:
         file: ${{ inputs.dockerfile }}
         push: ${{ inputs.dry-run != 'true' }}
         pull: true
-        tags: ${{ env.LOWERCASED }}:${{ inputs.image-tag }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
         build-args: ${{ inputs.build-args }}
+
+    - name: Output image
+      shell: bash
+      id: image
+      run: |
+        image_name="${IMAGE_REGISTRY}/${IMAGE_NAME}"
+        echo "image=$image_name" >> "$GITHUB_OUTPUT"
