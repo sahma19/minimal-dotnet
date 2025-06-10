@@ -51,7 +51,7 @@ jobs:
       matrix:
         include:
           - image: runtime-deps
-            digest: ${{ jobs.build.outputs.runtime-deps-digest }}
+            digest: ${{ needs.build-minimal-docker-image.outputs.runtime-deps-digest }}
           - image: runtime-deps-globalization
             digest: ${{ needs.build-minimal-docker-image.outputs.runtime-deps-globalization-digest }}
           - image: aspnet
@@ -66,3 +66,4 @@ jobs:
         uses: ./.github/actions/attest-sign
         with:
           image_ref: "ghcr.io/${{ github.repository }}:${{ matrix.image }}-${{ needs.build-minimal-docker-image.outputs.publish-version }}@${{ matrix.digest }}"
+
