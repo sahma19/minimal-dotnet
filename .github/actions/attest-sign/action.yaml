@@ -1,0 +1,71 @@
+name: 'attest-sign'
+description: 'Generate SBOM, attest and sign docker image'
+branding:
+  icon: 'lock'
+  color: 'green'
+inputs:
+  image_ref:
+    description: |
+      'form <image>@<digest>'
+      'image ref, i.e. "europe-north1-docker.pkg.dev/nais-io/nais/images/canary-deployer@sha256:eac1f85bee008dfe4ca0eadd1f32256946a171b445d129dba8f00cc67d43582b"'
+    required: true
+  sbom:
+    description: 'existing SBOM in cyclonedx format'
+    default: 'auto-generate-for-me-please.json'
+outputs:
+  sbom:
+    description: 'SBOM.json in cyclonedx format'
+    value: ${{ steps.set-outputs.outputs.SBOM }}
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Validate image ref'
+      env:
+        IMAGE_REF: ${{ inputs.image_ref }}
+      shell: bash
+      run: |
+        if [[ "${IMAGE_REF}" != *@sha256:* ]]; then
+          echo "Image must be in the form of <image>@<digest>"
+          exit 1
+        fi
+
+    - name: 'Install cosign'
+      uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb
+
+    - name: 'Check SBOM input'
+      env:
+        SBOM: ${{ inputs.sbom }}
+      shell: bash
+      run: |
+        if [ -z "${SBOM}" ]; then
+          echo "SBOM input is empty. Please provide a valid SBOM for attestation."
+        else
+          echo "SBOM input is provided: ${SBOM}"
+        fi
+
+    - name: 'Setup ORAS for manifest fetch'
+      uses: oras-project/setup-oras@8d34698a59f5ffe24821f0b48ab62a3de8b64b20
+
+    - name: 'Generate SBOM'
+      if: inputs.sbom == 'auto-generate-for-me-please.json'
+      uses: anchore/scan-action@2c901ab7378897c01b8efaa2d0c9bf519cc64b9e # v6.2.0
+      with:
+        image: ${{ inputs.image_ref }}
+        output-format: cyclonedx-json
+        output-file: ${{ inputs.sbom }}
+        fail-build: false
+
+    - name: 'Sign and attest image'
+      env:
+        IMAGE_REF: ${{ inputs.image_ref }}
+        SBOM:     ${{ inputs.sbom }}
+      shell: bash
+      run: |
+        cosign sign --yes "${IMAGE_REF}"
+        cosign attest --yes --predicate "${SBOM}" --type cyclonedx "${IMAGE_REF}"
+
+    - name: 'Set outputs'
+      id: set-outputs
+      shell: bash
+      run: |
+        echo "SBOM=${{ inputs.sbom }}" >> $GITHUB_OUTPUT

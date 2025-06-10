@@ -46,3 +46,18 @@ jobs:
       publish-major-version: ${{ needs.build-if-needed.outputs.DOTNET_RUNTIME_MAJOR }}
       dry-run: 'false'
       is-dependabot: 'false'
+      
+  attest-and-sign:
+    needs: build-minimal-docker-image
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        imageEntry: ${{ fromJson(needs.build.outputs.image-matrix) }}
+
+    steps:
+      - name: Attest & sign ${{ matrix.imageEntry.image }}
+        uses: ./.github/actions/attest-sign
+        with:
+          image_ref: >
+            ghcr.io/${{ github.repository }}:${{ matrix.imageEntry.image }}-${{ needs.build.outputs.publish-version }}
+            @${{ matrix.imageEntry.digest }}

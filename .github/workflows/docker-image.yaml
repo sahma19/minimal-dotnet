@@ -23,6 +23,16 @@ on:
         description: "An indication of a dependabot pull request"
         required: true
         type: string
+    outputs:
+      image-matrix:
+        description: JSON array of {image,digest}
+        value: |
+          ${{ toJson([
+          { "image": "runtime-deps", "digest": steps.build-and-push-runtime-deps.outputs.digest },
+          { "image": "runtime-deps-globalization", "digest": steps.build-and-push-runtime-deps-globalization.outputs.digest },
+          { "image": "aspnet", "digest": steps.build-and-push-aspnet.outputs.digest },
+          { "image": "aspnet-globalization", "digest": steps.build-and-push-aspnet-globalization.outputs.digest }
+          ]) }}
 
 permissions:
   contents: read
