@@ -32,16 +32,16 @@ on:
         value: ${{ inputs.publish-major-version }}
       runtime-deps-digest:
         description: "SHA256 digest of runtime-deps image"
-        value: ${{ jobs.build.outputs.runtime-deps-digest }}
+        value: ${{ steps.build-and-push-runtime-deps.outputs.digest }}
       runtime-deps-globalization-digest:
         description: "SHA256 digest of runtime-deps-globalization image"
-        value: ${{ jobs.build.outputs.runtime-deps-globalization-digest }}
+        value: ${{ steps.build-and-push-runtime-deps-globalization.outputs.digest }}
       aspnet-digest:
         description: "SHA256 digest of aspnet image"
-        value: ${{ jobs.build.outputs.aspnet-digest }}
+        value: ${{ steps.build-and-push-aspnet.outputs.digest }}
       aspnet-globalization-digest:
         description: "SHA256 digest of aspnet-globalization image"
-        value: ${{ jobs.build.outputs.aspnet-globalization-digest }}
+        value: ${{ steps.build-and-push-aspnet-globalization.outputs.digest }}
 
 permissions:
   contents: read
