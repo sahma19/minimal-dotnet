@@ -24,15 +24,24 @@ on:
         required: true
         type: string
     outputs:
-      image-matrix:
-        description: JSON array of {image,digest}
-        value: |
-          ${{ toJson([
-          { "image": "runtime-deps", "digest": steps.build-and-push-runtime-deps.outputs.digest },
-          { "image": "runtime-deps-globalization", "digest": steps.build-and-push-runtime-deps-globalization.outputs.digest },
-          { "image": "aspnet", "digest": steps.build-and-push-aspnet.outputs.digest },
-          { "image": "aspnet-globalization", "digest": steps.build-and-push-aspnet-globalization.outputs.digest }
-          ]) }}
+      publish-version:
+        description: "Publish tag version"
+        value: ${{ inputs.publish-version }}
+      publish-major-version:
+        description: "Publish major tag"
+        value: ${{ inputs.publish-major-version }}
+      runtime-deps-digest:
+        description: "SHA256 digest of runtime-deps image"
+        value: ${{ steps.build-and-push-runtime-deps.outputs.digest }}
+      runtime-deps-globalization-digest:
+        description: "SHA256 digest of runtime-deps-globalization image"
+        value: ${{ steps.build-and-push-runtime-deps-globalization.outputs.digest }}
+      aspnet-digest:
+        description: "SHA256 digest of aspnet image"
+        value: ${{ steps.build-and-push-aspnet.outputs.digest }}
+      aspnet-globalization-digest:
+        description: "SHA256 digest of aspnet-globalization image"
+        value: ${{ steps.build-and-push-aspnet-globalization.outputs.digest }}
 
 permissions:
   contents: read

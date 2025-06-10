@@ -52,12 +52,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        imageEntry: ${{ fromJson(needs.build.outputs.image-matrix) }}
-
+        include:
+          - image: runtime-deps
+            digest: ${{ needs.build.outputs.runtime-deps-digest }}
+          - image: runtime-deps-globalization
+            digest: ${{ needs.build.outputs.runtime-deps-globalization-digest }}
+          - image: aspnet
+            digest: ${{ needs.build.outputs.aspnet-digest }}
+          - image: aspnet-globalization
+            digest: ${{ needs.build.outputs.aspnet-globalization-digest }}
     steps:
-      - name: Attest & sign ${{ matrix.imageEntry.image }}
+      - name: Attest & sign ${{ matrix.image }}
         uses: ./.github/actions/attest-sign
         with:
           image_ref: >
-            ghcr.io/${{ github.repository }}:${{ matrix.imageEntry.image }}-${{ needs.build.outputs.publish-version }}
-            @${{ matrix.imageEntry.digest }}
+            ghcr.io/${{ github.repository }}: 
+            ${{ matrix.image }}-${{ needs.build.outputs.publish-version }}
+            @${{ matrix.digest }}
