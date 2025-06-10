@@ -29,8 +29,11 @@ jobs:
         run: |
           set -e
           releases=$(curl -s https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/9.0/releases.json)
-          runtime_version=$(jq -r '."latest-release"' <<<"$releases")
-          major=${runtime_version%.*}
+
+          runtime_version=$(jq -r '."latest-release"' <<<"$releases")   # e.g. 9.0.5
+          major=${runtime_version%.*}                                   # e.g. 9.0
+
+          # write step outputs (new syntax)
           echo "DOTNET_RUNTIME_VERSION=$runtime_version" >>"$GITHUB_OUTPUT"
           echo "DOTNET_RUNTIME_MAJOR=$major"             >>"$GITHUB_OUTPUT"
 
@@ -43,27 +46,3 @@ jobs:
       publish-major-version: ${{ needs.build-if-needed.outputs.DOTNET_RUNTIME_MAJOR }}
       dry-run: 'false'
       is-dependabot: 'false'
-
-  attest-and-sign:
-    needs: build-minimal-docker-image
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - image: runtime-deps
-            digest: ${{ needs.build-minimal-docker-image.outputs.runtime-deps-digest }}
-          - image: runtime-deps-globalization
-            digest: ${{ needs.build-minimal-docker-image.outputs.runtime-deps-globalization-digest }}
-          - image: aspnet
-            digest: ${{ needs.build-minimal-docker-image.outputs.aspnet-digest }}
-          - image: aspnet-globalization
-            digest: ${{ needs.build-minimal-docker-image.outputs.aspnet-globalization-digest }}
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Attest & sign ${{ matrix.image }}
-        uses: ./.github/actions/attest-sign
-        with:
-          image_ref: "ghcr.io/${{ github.repository }}:${{ matrix.image }}-${{ needs.build-minimal-docker-image.outputs.publish-version }}@${{ matrix.digest }}"
-
