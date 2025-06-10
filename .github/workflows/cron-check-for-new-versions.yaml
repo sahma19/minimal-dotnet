@@ -29,11 +29,8 @@ jobs:
         run: |
           set -e
           releases=$(curl -s https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/9.0/releases.json)
-
-          runtime_version=$(jq -r '."latest-release"' <<<"$releases")   # e.g. 9.0.5
-          major=${runtime_version%.*}                                   # e.g. 9.0
-
-          # write step outputs (new syntax)
+          runtime_version=$(jq -r '."latest-release"' <<<"$releases")
+          major=${runtime_version%.*}
           echo "DOTNET_RUNTIME_VERSION=$runtime_version" >>"$GITHUB_OUTPUT"
           echo "DOTNET_RUNTIME_MAJOR=$major"             >>"$GITHUB_OUTPUT"
 
@@ -54,18 +51,18 @@ jobs:
       matrix:
         include:
           - image: runtime-deps
-            digest: ${{ needs.build.outputs.runtime-deps-digest }}
+            digest: ${{ steps.fetch.outputs.runtime-deps-digest }}
           - image: runtime-deps-globalization
-            digest: ${{ needs.build.outputs.runtime-deps-globalization-digest }}
+            digest: ${{ steps.fetch.outputs.runtime-deps-globalization-digest }}
           - image: aspnet
-            digest: ${{ needs.build.outputs.aspnet-digest }}
+            digest: ${{ steps.fetch.outputs.aspnet-digest }}
           - image: aspnet-globalization
-            digest: ${{ needs.build.outputs.aspnet-globalization-digest }}
+            digest: ${{ steps.fetch.outputs.aspnet-globalization-digest }}
     steps:
       - name: Attest & sign ${{ matrix.image }}
         uses: ./.github/actions/attest-sign
         with:
           image_ref: >
             ghcr.io/${{ github.repository }}: 
-            ${{ matrix.image }}-${{ needs.build.outputs.publish-version }}
+            ${{ matrix.image }}-${{ steps.fetch.outputs.publish-version }}
             @${{ matrix.digest }}
