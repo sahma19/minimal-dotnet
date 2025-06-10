@@ -51,18 +51,18 @@ jobs:
       matrix:
         include:
           - image: runtime-deps
-            digest: ${{ steps.fetch.outputs.runtime-deps-digest }}
+            digest: ${{ needs.build-minimal-docker-image.outputs.runtime-deps-digest }}
           - image: runtime-deps-globalization
-            digest: ${{ steps.fetch.outputs.runtime-deps-globalization-digest }}
+            digest: ${{ needs.build-minimal-docker-image.outputs.runtime-deps-globalization-digest }}
           - image: aspnet
-            digest: ${{ steps.fetch.outputs.aspnet-digest }}
+            digest: ${{ needs.build-minimal-docker-image.outputs.aspnet-digest }}
           - image: aspnet-globalization
-            digest: ${{ steps.fetch.outputs.aspnet-globalization-digest }}
+            digest: ${{ needs.build-minimal-docker-image.outputs.aspnet-globalization-digest }}
     steps:
       - name: Attest & sign ${{ matrix.image }}
         uses: ./.github/actions/attest-sign
         with:
           image_ref: >
-            ghcr.io/${{ github.repository }}: 
-            ${{ matrix.image }}-${{ steps.fetch.outputs.publish-version }}
+            ghcr.io/${{ github.repository }}:
+            ${{ matrix.image }}-${{ needs.build-minimal-docker-image.outputs.publish-version }}
             @${{ matrix.digest }}
