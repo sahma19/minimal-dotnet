@@ -71,7 +71,7 @@ jobs:
     - name: Attest and sign runtime-deps image
       uses: ./.github/actions/attest-sign
       with:
-        image_ref: ${{ steps.build-and-push-runtime-deps.outputs.imageid }}
+        image_ref: ghcr.io/${{ github.repository }}:runtime-deps-${{ inputs.publish-version }}@${{ steps.build-and-push-runtime-deps.outputs.digest }}
         sbom: auto-generate-for-me-please.json
 
     - name: Build and push runtime-deps-globalization
