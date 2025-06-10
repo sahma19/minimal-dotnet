@@ -63,6 +63,12 @@ runs:
       run: |
         cosign sign --yes "${IMAGE_REF}"
         cosign attest --yes --predicate "${SBOM}" --type cyclonedx "${IMAGE_REF}"
+        
+    - name: 'Upload SBOM artifact'
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: ${{ inputs.sbom }}
 
     - name: 'Set outputs'
       id: set-outputs
