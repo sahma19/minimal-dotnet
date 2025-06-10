@@ -65,4 +65,7 @@ jobs:
       - name: Attest & sign ${{ matrix.image }}
         uses: ./.github/actions/attest-sign
         with:
-          image_ref: "ghcr.io/${{ github.repository }}:${{ matrix.image }}-${{ needs.build-minimal-docker-image.outputs.publish-version }}@${{ matrix.digest }}"
+          image_ref: >
+            ghcr.io/${{ github.repository }}:
+            ${{ matrix.image }}-${{ needs.build-minimal-docker-image.outputs.publish-version }}
+            @${{ matrix.digest }}
