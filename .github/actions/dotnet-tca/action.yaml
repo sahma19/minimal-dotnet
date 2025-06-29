@@ -41,9 +41,9 @@ runs:
     - name: Write provenance layout
       shell: bash
       run: |
-        mkdir -p "${SLSA_OUTPUTS_DIR}"
+        mkdir -p "../${SLSA_OUTPUTS_DIR}"
 
-        cat > "${SLSA_OUTPUTS_DIR}/artifacts-layout.json" <<EOF
+        cat > "../${SLSA_OUTPUTS_DIR}/artifacts-layout.json" <<EOF
         {
           "version": 1,
           "attestations": [
@@ -59,3 +59,4 @@ runs:
           ]
         }
         EOF
+    
