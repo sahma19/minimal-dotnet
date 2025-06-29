@@ -62,7 +62,9 @@ runs:
         
     - name: Copy layout into local dir
       shell: bash
-      run: cp "../${SLSA_OUTPUTS_DIR}/artifacts-layout.json" artifacts-layout.json
+      run: |
+        cp "../${SLSA_OUTPUTS_DIR}/artifacts-layout.json" .
+        cp "../${SLSA_PREDICATE_FILE}" predicate.json
       
     - name: Generate attestations
       uses: slsa-framework/slsa-github-generator/.github/actions/generate-attestations@v2.1.0
