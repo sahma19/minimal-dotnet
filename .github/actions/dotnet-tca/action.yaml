@@ -1,79 +1,50 @@
-name: Dotnet TCA – Hardened
+name: Docker TCA – build & upload OCI bundle
 
-description: |
-  Builds the .NET project, bundles all produced artifacts, and securely hands them
-  to the Trusted Release Workflow (TRW) without requiring *write* access to the
-  target repository.
+description: >
+  Builds the container image **offline** (type=oci), uploads it with
+  secure-upload-folder, and writes a provenance layout.
 
 inputs:
-  slsa-workflow-inputs: { description: "JSON string of inputs", required: true }
-  slsa-layout-file: { description: "Path to the layout file", required: true }
-  slsa-workflow-secret1:{ description: "GitHub token (or other secret)", required: false }
+  dockerfile:
+    required: true
+  context:
+    required: false
+    default: "."
+  build-args:
+    required: false
+  image-tag:
+    required: true
 
 outputs:
-  artifact-name:
-    description: "Unique name of the uploaded artifact bundle"
-    value: ${{ steps.upload.outputs.artifact-name }}
-  artifact-sha256:
-    description: "sha256 digest of the uploaded artifact bundle"
-    value: ${{ steps.upload.outputs.sha256 }}
+  oci-download-name:
+    value: ${{ steps.build.outputs.artifact-name }}
+  oci-download-sha256:
+    value: ${{ steps.build.outputs.artifact-sha256 }}
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - name: Parse JSON inputs into env
-      id: parse
-      shell: bash
-      run: |
-        echo '${{ inputs.slsa-workflow-inputs }}' > inputs.json
-        jq -r 'to_entries[] | "\(.key)=\(.value | tostring)"' inputs.json >> "$GITHUB_ENV"
-
-    - name: Dotnet build (composite)
-      uses: ./.github/actions/dotnet-build
+    - id: build
+      name: Build OCI (no push)
+      uses: ./.github/actions/docker-build-only
       with:
-        solution: ${{ env.solution }}
-        project: ${{ env.project }}
-        configuration: ${{ env.configuration }}
-        dockerfile: ${{ env.dockerfile }}
-        dry-run: ${{ env.dry-run }}
-        sdk-version: ${{ env.sdk-version }}
-        runtime-version: ${{ env.runtime-version }}
+        dockerfile: ${{ inputs.dockerfile }}
+        docker-context: ${{ inputs.context }}
+        build-args: ${{ inputs.build-args }}
 
-    - name: Bundle artifacts
-      id: bundle
+    - name: Write provenance layout
       shell: bash
       run: |
-        ARTIFACT_ID="dotnet-${{ github.run_id }}-${{ github.run_attempt }}-$(openssl rand -hex 6)"
-        echo "ARTIFACT_ID=$ARTIFACT_ID" >> "$GITHUB_ENV"
-        mkdir -p "$ARTIFACT_ID"
-        # Adapt the copy pattern to where dotnet‑build writes outputs
-        cp "${{ github.workspace }}/artifacts/*.nupkg" "$ARTIFACT_ID/"
-
-    - name: Secure upload folder
-      id: upload
-      uses: slsa-framework/slsa-github-generator/actions/secure-upload-folder@v2.1.0
-      with:
-        folder: ${{ env.ARTIFACT_ID }}
-
-    - name: Export bundle metadata
-      shell: bash
-      run: |
-        echo "artifact-name=${{ steps.upload.outputs.artifact-name }}" >> "$GITHUB_OUTPUT"
-        echo "artifact-sha256=${{ steps.upload.outputs.sha256 }}" >> "$GITHUB_OUTPUT"
-
-    - name: Write SLSA layout file
-      shell: bash
-      run: |
-        mkdir -p "$(dirname '${{ inputs.slsa-layout-file }}')"
-        cat <<EOF > "${{ inputs.slsa-layout-file }}"
+        mkdir -p .slsa
+        cat > .slsa/layout.json <<EOF
         {
           "version": 1,
           "attestations": [
             {
-              "name": "${{ env.configuration }}-${{ env.version }}",
+              "name": "${{ inputs.image-tag }}",
               "subjects": [
                 {
-                  "name": "ghcr.io/${{ github.repository_owner }}/${{ env.configuration }}:${{ env.version }}",
+                  "name": "ghcr.io/${{ github.repository_owner }}/$(basename ${{ github.repository }}):${{ inputs.image-tag }}",
                   "digest": { "sha256": "${{ steps.build.outputs.digest }}" }
                 }
               ]
