@@ -38,7 +38,7 @@ jobs:
         id: slsa-setup
         uses: slsa-framework/slsa-github-generator/actions/delegator/setup-generic@v2.1.0
         with:
-          slsa-workflow-recipient: "delegator_generic_slsa3.yml"
+          slsa-workflow-recipient: "delegator_lowperms-generic_slsa3.yml"
           slsa-rekor-log-public: ${{ inputs.rekor-log-public }}
           slsa-runner-label: "ubuntu-latest"
           slsa-build-action-path: ".github/actions/dotnet-tca"
