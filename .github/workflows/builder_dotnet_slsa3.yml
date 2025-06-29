@@ -45,10 +45,11 @@ jobs:
         id: slsa-setup
         uses: slsa-framework/slsa-github-generator/actions/delegator/setup-generic@v2.1.0
         with:
-          slsa-workflow-recipient: delegator_lowperms-generic_slsa3.yml
-          slsa-runner-label: ubuntu-latest
-          slsa-build-action-path: .github/actions/docker-tca
+          slsa-workflow-recipient: "delegator_lowperms-generic_slsa3.yml"
+          slsa-runner-label: "ubuntu-latest"
+          slsa-build-action-path: ".github/actions/dotnet-tca"
           slsa-workflow-inputs: ${{ toJson(inputs) }}
+          slsa-workflow-masked-inputs: "project"
           slsa-rekor-log-public: ${{ inputs.rekor-log-public }}
           slsa-version: v1.0
 
