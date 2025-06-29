@@ -37,6 +37,8 @@ runs:
         dockerfile:     ${{ inputs.dockerfile }}
         docker-context: ${{ inputs.context }}
         build-args:     ${{ inputs.build-args }}
+        tags: ${{ inputs.image-tag }}
+        
 
     - name: Write provenance layout
       shell: bash

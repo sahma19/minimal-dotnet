@@ -11,6 +11,9 @@ inputs:
   build-args:
     required: false
     description: "Build Args"
+  tags:
+    required: true
+    description: "tags"
 
 outputs:
   artifact-name:
@@ -35,6 +38,7 @@ runs:
       with:
         context:     ${{ inputs.docker-context }}
         file:        ${{ inputs.dockerfile }}
+        tags: ${{ inputs.tags }}
         push:        false
         outputs:     type=oci,dest=oci-image.tar
         build-args:  ${{ inputs.build-args }}
