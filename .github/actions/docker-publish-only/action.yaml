@@ -32,7 +32,7 @@ runs:
     - name: Load & push
       shell: bash
       run: |
-        docker image load -i "${{ steps.dload.outputs.folder }}/oci-layout"
+        docker image load -i "${{ steps.dload.outputs.folder }}/oci-image.tar"
         REF="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${GITHUB_REPOSITORY##*/}:${{ inputs.image-tag }}"
         IMAGE_ID=$(docker images --format "{{.Repository}}:{{.Tag}}" | head -n1)
         docker tag "$IMAGE_ID" "$REF"
