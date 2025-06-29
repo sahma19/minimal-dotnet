@@ -48,8 +48,7 @@ runs:
     - name: Create unique bundle dir
       shell: bash
       run: |
-        echo "SLSA_ATTESTATIONS_OUTPUT_FOLDER=attestations-${{ steps.prep.outputs.name }}" >> "$GITHUB_ENV"
-        mkdir "${{ steps.prep.outputs.name }}-blan"
+        mkdir "${{ steps.prep.outputs.name }}"
         mv oci-image.tar "${{ steps.prep.outputs.name }}/"
 
     - id: upload
