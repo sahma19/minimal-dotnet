@@ -29,31 +29,31 @@ runs:
     - name: Set up Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build OCI archive
-      id: build
+    - id: build
+      name: Build OCI archive
       uses: docker/build-push-action@v6
       with:
-        context: ${{ inputs.docker-context }}
-        file: ${{ inputs.dockerfile }}
-        push: false
-        outputs: type=oci,dest=${{ github.workspace }}/oci-image.tar
-        build-args: ${{ inputs.build-args }}
+        context:     ${{ inputs.docker-context }}
+        file:        ${{ inputs.dockerfile }}
+        push:        false
+        outputs:     type=oci,dest=oci-image.tar
+        build-args:  ${{ inputs.build-args }}
 
-    - name: Create bundle dir
-      shell: bash
-      run: |
-        mkdir oci-bundle
-        mv "${{ github.workspace }}/oci-image.tar" oci-bundle/
-
-    - name: Make unique name
-      id: prep
+    - id: prep
+      name: Make unique bundle name
       shell: bash
       run: |
         echo "name=oci-$(openssl rand -hex 12)" >> "$GITHUB_OUTPUT"
 
-    - name: Secure upload folder
-      id: upload
+    - name: Create unique bundle dir
+      shell: bash
+      run: |
+        mkdir "${{ steps.prep.outputs.name }}"
+        mv oci-image.tar "${{ steps.prep.outputs.name }}/"
+
+    - id: upload
+      name: Secure upload folder
       uses: slsa-framework/slsa-github-generator/actions/delegator/secure-upload-folder@v2.1.0
       with:
         name: ${{ steps.prep.outputs.name }}
-        path: oci-bundle
+        path: ${{ steps.prep.outputs.name }}
