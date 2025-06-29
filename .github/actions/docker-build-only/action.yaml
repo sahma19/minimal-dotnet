@@ -1,0 +1,34 @@
+name: Build Docker image (no push)
+
+inputs:
+  dockerfile: { required: true }
+  docker-context: { required: false, default: '.' }
+  build-args: { required: false }
+
+outputs:
+  artifact-name: { value: ${{ steps.upload.outputs.artifact-name }} }
+  artifact-sha256: { value: ${{ steps.upload.outputs.sha256 }} }
+
+runs:
+  using: composite
+  steps:
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build OCI layout
+      id: build
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.docker-context }}
+        file: ${{ inputs.dockerfile }}
+        push: false
+        outputs: type=oci,dest=oci-layout
+        build-args: ${{ inputs.build-args }}
+
+    - name: Secure upload folder
+      id: upload
+      uses: slsa-framework/slsa-github-generator/actions/secure-upload-folder@v2
+      with:
+        folder: oci-layout
