@@ -1,4 +1,4 @@
-name: Dotnet Builder – SLSA3
+name: Dotnet Builder – SLSA3 (hardened)
 
 on:
   workflow_call:
@@ -12,24 +12,22 @@ on:
       dry-run: { required: false, type: string, default: "false" }
       rekor-log-public: { required: false, type: boolean, default: true }
     secrets:
-      github-token: { required: true }
+      github-token:      { required: true }
     outputs:
-      provenance-download-name:
-        description: "The name of the provenance attestation uploaded to the workflow run."
-        value: ${{ jobs.run.outputs.attestations-download-name }}
-      provenance-download-sha256:
-        description: "The sha256 of the provenance attestation uploaded to the workflow run."
-        value: ${{ jobs.run.outputs.attestations-download-sha256 }}
+      provenance-download-name: { description: "Name of provenance attestation", value: ${{ jobs.run.outputs.attestations-download-name }} }
+      provenance-download-sha256: { description: "sha256 of provenance attestation", value: ${{ jobs.run.outputs.attestations-download-sha256 }} }
+      artifact-download-name: { description: "Name of artifact bundle", value: ${{ jobs.run.outputs.artifact-download-name }} }
+      artifact-download-sha256: { description: "sha256 of artifact bundle", value: ${{ jobs.run.outputs.artifact-download-sha256 }} }
 
 jobs:
   setup:
     runs-on: ubuntu-latest
     permissions:
-      contents: "read"
-      id-token: "write"
-      attestations: "write"
-      actions: "read"
-      security-events: "write"
+      contents: read
+      id-token: write
+      attestations: write
+      actions: read
+      security-events: write
     outputs:
       slsa-token: ${{ steps.slsa-setup.outputs.slsa-token }}
     steps:
@@ -48,12 +46,11 @@ jobs:
   run:
     needs: setup
     permissions:
-      contents: "write"
-      packages: "write"
-      id-token: "write"
-      attestations: "write"
-      actions: "read"
-      security-events: "write"
+      contents: read
+      id-token: write
+      attestations: write
+      actions: read
+      security-events: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@v2.1.0
     with:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
