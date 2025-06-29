@@ -1,30 +1,21 @@
-name: Dotnet Builder – SLSA3 (hardened)
+name: Docker Builder – SLSA3 (hardened)
 
 on:
   workflow_call:
     inputs:
-      solution:
-        required: true
-        type: string
-      project:
-        required: true
-        type: string
-      configuration:
-        required: true
-        type: string
       dockerfile:
         required: true
         type: string
-      sdk-version:
+      context:
         required: false
         type: string
-      runtime-version:
+        default: "."
+      build-args:
         required: false
         type: string
-      dry-run:
-        required: false
+      image-tag:
+        required: true
         type: string
-        default: "false"
       rekor-log-public:
         required: false
         type: boolean
@@ -33,14 +24,6 @@ on:
       github-token:
         required: true
     outputs:
-      provenance-download-name:
-        value: ${{ jobs.run.outputs.attestations-download-name }}
-      provenance-download-sha256:
-        value: ${{ jobs.run.outputs.attestations-download-sha256 }}
-      artifact-download-name:
-        value: ${{ jobs.run.outputs.artifact-download-name }}
-      artifact-download-sha256:
-        value: ${{ jobs.run.outputs.artifact-download-sha256 }}
       oci-download-name:
         value: ${{ jobs.run.outputs.oci-download-name }}
       oci-download-sha256:
@@ -54,31 +37,27 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-      security-events: write
     outputs:
       slsa-token: ${{ steps.slsa-setup.outputs.slsa-token }}
     steps:
-      - name: SLSA Setup
-        id: slsa-setup
+      - id: slsa-setup
+        name: SLSA Setup
         uses: slsa-framework/slsa-github-generator/actions/delegator/setup-generic@v2.1.0
         with:
           slsa-workflow-recipient: "delegator_lowperms-generic_slsa3.yml"
-          slsa-rekor-log-public: ${{ inputs.rekor-log-public }}
+          slsa-build-action-path: ".github/actions/docker-tca"
           slsa-runner-label: "ubuntu-latest"
-          slsa-build-action-path: ".github/actions/dotnet-tca"
           slsa-workflow-inputs: ${{ toJson(inputs) }}
-          slsa-workflow-masked-inputs: project
           slsa-version: "v1.0"
 
   run:
     needs: setup
+    uses: slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@v2.1.0
     permissions:
       contents: read
       id-token: write
       attestations: write
       actions: read
-      security-events: write
-    uses: slsa-framework/slsa-github-generator/.github/workflows/delegator_lowperms-generic_slsa3.yml@v2.1.0
     with:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
     secrets:
