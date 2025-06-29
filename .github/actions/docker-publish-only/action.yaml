@@ -1,19 +1,25 @@
 name: Publish Docker image
 
 inputs:
-  artifact-name: { required: true }
-  artifact-sha256: { required: true }
-  image-tag: { required: true }
+  artifact-name:
+    required: true
+    description: "artifact-name"
+  artifact-sha256:
+    required: true
+    description: "artifact sha"
+  image-tag:
+    required: true
+    description: "image-tag"
 
 runs:
   using: composite
   steps:
     - name: Secure download bundle
       id: dload
-      uses: slsa-framework/slsa-github-generator/actions/secure-download-folder@v2
+      uses: slsa-framework/slsa-github-generator/actions/delegator/secure-download-folder@v2.1.0
       with:
-        artifact-name: ${{ inputs.artifact-name }}
-        sha256: ${{ inputs.artifact-sha256 }}
+        sha256: '${{ inputs.artifact-sha256 }}'
+        name: '${{ inputs.artifact-name }}'
 
     - name: Log in to the Container registry
       uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0

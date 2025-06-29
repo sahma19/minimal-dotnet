@@ -7,19 +7,25 @@ description: >
 inputs:
   dockerfile:
     required: true
+    description: "dockerfile"
   context:
     required: false
     default: "."
+    description: "context"
   build-args:
     required: false
+    description: "build args"
   image-tag:
     required: true
+    description: "image tag"
 
 outputs:
   oci-download-name:
     value: ${{ steps.build.outputs.artifact-name }}
+    description: "oci-download name"
   oci-download-sha256:
     value: ${{ steps.build.outputs.artifact-sha256 }}
+    description: "oci download sha"
 
 runs:
   using: composite

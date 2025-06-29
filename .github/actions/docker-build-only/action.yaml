@@ -1,19 +1,31 @@
 name: Build Docker image (no push)
 
 inputs:
-  dockerfile: { required: true }
-  docker-context: { required: false, default: '.' }
-  build-args: { required: false }
+  dockerfile:
+    required: true
+    description: "Dockerfile"
+  docker-context:
+    required: false
+    default: '.'
+    description: "Docker context"
+  build-args:
+    required: false
+    description: "Build Args"
 
 outputs:
-  artifact-name: { value: ${{ steps.upload.outputs.artifact-name }} }
-  artifact-sha256: { value: ${{ steps.upload.outputs.sha256 }} }
+  artifact-name:
+    value: ${{ steps.upload.outputs.artifact-name }}
+    description: "artifact name"
+  artifact-sha256:
+    value: ${{ steps.upload.outputs.sha256 }}
+    description: "artifact digest"
 
 runs:
   using: composite
   steps:
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
+
     - name: Set up Buildx
       uses: docker/setup-buildx-action@v3
 
@@ -26,9 +38,16 @@ runs:
         push: false
         outputs: type=oci,dest=oci-layout
         build-args: ${{ inputs.build-args }}
+        
+    - name: Make unique name
+      id: prep
+      shell: bash
+      run: |
+        echo "name=oci-$(openssl rand -hex 12)" >> "$GITHUB_OUTPUT"
 
     - name: Secure upload folder
       id: upload
-      uses: slsa-framework/slsa-github-generator/actions/secure-upload-folder@v2
+      uses: slsa-framework/slsa-github-generator/actions/delegator/secure-upload-folder@v2.1.0
       with:
-        folder: oci-layout
+        name: ${{ steps.prep.outputs.name }}
+        path: oci-layout
