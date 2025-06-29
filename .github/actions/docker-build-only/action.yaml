@@ -43,13 +43,11 @@ runs:
       name: Make unique bundle name
       shell: bash
       run: |
-        echo "name=oci-$(openssl rand -hex 12)" >> "$GITHUB_OUTPUT"
-
-    - name: Create unique bundle dir
+        echo "name=oci-$(openssl rand -hex 16)-$RANDOM-$(date +%s)" >> "$GITHUB_OUTPUT"
+        
+    - name: Rename OCI archive to unique name
       shell: bash
-      run: |
-        mkdir "${{ steps.prep.outputs.name }}"
-        mv oci-image.tar "${{ steps.prep.outputs.name }}/"
+      run: mv oci-image.tar "${{ steps.prep.outputs.name }}"
 
     - id: upload
       name: Secure upload folder
