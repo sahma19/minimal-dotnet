@@ -58,4 +58,4 @@ runs:
       uses: slsa-framework/slsa-github-generator/actions/delegator/secure-upload-folder@v2.1.0
       with:
         name: ${{ steps.prep.outputs.name }}
-        path: ${{ steps.prep.outputs.name }}
+        path: ${{ github.workspace }}/${{ steps.prep.outputs.name }}
