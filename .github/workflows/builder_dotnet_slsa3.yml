@@ -34,17 +34,17 @@ on:
         required: true
     outputs:
       provenance-download-name:
-        description: "Name of provenance attestation"
         value: ${{ jobs.run.outputs.attestations-download-name }}
       provenance-download-sha256:
-        description: "sha256 of provenance attestation"
         value: ${{ jobs.run.outputs.attestations-download-sha256 }}
       artifact-download-name:
-        description: "Name of artifact bundle"
         value: ${{ jobs.run.outputs.artifact-download-name }}
       artifact-download-sha256:
-        description: "sha256 of artifact bundle"
         value: ${{ jobs.run.outputs.artifact-download-sha256 }}
+      oci-download-name:
+        value: ${{ jobs.run.outputs.oci-download-name }}
+      oci-download-sha256:
+        value: ${{ jobs.run.outputs.oci-download-sha256 }}
 
 jobs:
   setup:
