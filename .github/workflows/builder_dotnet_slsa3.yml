@@ -3,21 +3,48 @@ name: Dotnet Builder – SLSA3 (hardened)
 on:
   workflow_call:
     inputs:
-      solution: { required: true, type: string }
-      project: { required: true, type: string }
-      configuration: { required: true, type: string }
-      dockerfile: { required: true, type: string }
-      sdk-version: { required: false, type: string }
-      runtime-version: { required: false, type: string }
-      dry-run: { required: false, type: string, default: "false" }
-      rekor-log-public: { required: false, type: boolean, default: true }
+      solution:
+        required: true
+        type: string
+      project:
+        required: true
+        type: string
+      configuration:
+        required: true
+        type: string
+      dockerfile:
+        required: true
+        type: string
+      sdk-version:
+        required: false
+        type: string
+      runtime-version:
+        required: false
+        type: string
+      dry-run:
+        required: false
+        type: string
+        default: "false"
+      rekor-log-public:
+        required: false
+        type: boolean
+        default: true
     secrets:
-      github-token: { required: true }
+      github-token:
+        required: true
     outputs:
-      provenance-download-name: { description: "Name of provenance attestation", value: ${{ jobs.run.outputs.attestations-download-name }} }
-      provenance-download-sha256: { description: "sha256 of provenance attestation", value: ${{ jobs.run.outputs.attestations-download-sha256 }} }
-      artifact-download-name: { description: "Name of artifact bundle", value: ${{ jobs.run.outputs.artifact-download-name }} }
-      artifact-download-sha256: { description: "sha256 of artifact bundle", value: ${{ jobs.run.outputs.artifact-download-sha256 }} }
+      provenance-download-name:
+        description: "Name of provenance attestation"
+        value: ${{ jobs.run.outputs.attestations-download-name }}
+      provenance-download-sha256:
+        description: "sha256 of provenance attestation"
+        value: ${{ jobs.run.outputs.attestations-download-sha256 }}
+      artifact-download-name:
+        description: "Name of artifact bundle"
+        value: ${{ jobs.run.outputs.artifact-download-name }}
+      artifact-download-sha256:
+        description: "sha256 of artifact bundle"
+        value: ${{ jobs.run.outputs.artifact-download-sha256 }}
 
 jobs:
   setup:
@@ -41,7 +68,7 @@ jobs:
           slsa-build-action-path: ".github/actions/dotnet-tca"
           slsa-workflow-inputs: ${{ toJson(inputs) }}
           slsa-workflow-masked-inputs: project
-          slsa-version: 'v1.0'
+          slsa-version: "v1.0"
 
   run:
     needs: setup
