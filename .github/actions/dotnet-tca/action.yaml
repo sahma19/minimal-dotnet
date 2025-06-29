@@ -34,15 +34,16 @@ runs:
       name: Build OCI (no push)
       uses: ./.github/actions/docker-build-only
       with:
-        dockerfile: ${{ inputs.dockerfile }}
+        dockerfile:     ${{ inputs.dockerfile }}
         docker-context: ${{ inputs.context }}
-        build-args: ${{ inputs.build-args }}
+        build-args:     ${{ inputs.build-args }}
 
     - name: Write provenance layout
       shell: bash
       run: |
-        mkdir -p .slsa
-        cat > .slsa/layout.json <<EOF
+        mkdir -p "${SLSA_OUTPUTS_DIR}"
+
+        cat > "${SLSA_OUTPUTS_DIR}/artifacts-layout.json" <<EOF
         {
           "version": 1,
           "attestations": [
@@ -50,8 +51,8 @@ runs:
               "name": "${{ inputs.image-tag }}",
               "subjects": [
                 {
-                  "name": "ghcr.io/${{ github.repository_owner }}/$(basename ${{ github.repository }}):${{ inputs.image-tag }}",
-                  "digest": { "sha256": "${{ steps.build.outputs.digest }}" }
+                  "name": "ghcr.io/${{ github.repository_owner }}/$(basename "${{ github.repository }}"):${{ inputs.image-tag }}",
+                  "digest": { "sha256": "${{ steps.build.outputs.artifact-sha256 }}" }
                 }
               ]
             }
