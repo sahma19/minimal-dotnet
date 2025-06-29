@@ -14,7 +14,7 @@ inputs:
 
 outputs:
   artifact-name:
-    value: ${{ steps.upload.outputs.artifact-name }}
+    value: ${{ steps.prep.outputs.name }}
     description: "artifact name"
   artifact-sha256:
     value: ${{ steps.upload.outputs.sha256 }}
@@ -36,9 +36,9 @@ runs:
         context: ${{ inputs.docker-context }}
         file: ${{ inputs.dockerfile }}
         push: false
-        outputs: type=oci,dest=oci-layout
+        outputs: type=oci,dest=${{ github.workspace }}/oci-layout
         build-args: ${{ inputs.build-args }}
-        
+
     - name: Make unique name
       id: prep
       shell: bash
@@ -50,4 +50,4 @@ runs:
       uses: slsa-framework/slsa-github-generator/actions/delegator/secure-upload-folder@v2.1.0
       with:
         name: ${{ steps.prep.outputs.name }}
-        path: oci-layout
+        path: ${{ github.workspace }}/oci-layout
