@@ -32,7 +32,7 @@ runs:
   steps:
     - id: build
       name: Build OCI (no push)
-      uses: ./.github/actions/docker-build-only
+      uses: ./../__TOOL_CHECKOUT_DIR__/./.github/actions/docker-build-only
       with:
         dockerfile:     ${{ inputs.dockerfile }}
         docker-context: ${{ inputs.context }}
