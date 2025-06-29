@@ -1,0 +1,32 @@
+name: Publish Docker image
+
+inputs:
+  artifact-name: { required: true }
+  artifact-sha256: { required: true }
+  image-tag: { required: true }
+
+runs:
+  using: composite
+  steps:
+    - name: Secure download bundle
+      id: dload
+      uses: slsa-framework/slsa-github-generator/actions/secure-download-folder@v2
+      with:
+        artifact-name: ${{ inputs.artifact-name }}
+        sha256: ${{ inputs.artifact-sha256 }}
+
+    - name: Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Load & push
+      shell: bash
+      run: |
+        docker image load -i "${{ steps.dload.outputs.folder }}/oci-layout"
+        REF="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${GITHUB_REPOSITORY##*/}:${{ inputs.image-tag }}"
+        IMAGE_ID=$(docker images --format "{{.Repository}}:{{.Tag}}" | head -n1)
+        docker tag "$IMAGE_ID" "$REF"
+        docker push "$REF"
