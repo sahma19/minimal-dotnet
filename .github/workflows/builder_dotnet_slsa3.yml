@@ -37,18 +37,20 @@ jobs:
       id-token: write
       attestations: write
       actions: read
+      security-events: write
     outputs:
       slsa-token: ${{ steps.slsa-setup.outputs.slsa-token }}
     steps:
-      - id: slsa-setup
-        name: SLSA Setup
+      - name: SLSA Setup
+        id: slsa-setup
         uses: slsa-framework/slsa-github-generator/actions/delegator/setup-generic@v2.1.0
         with:
-          slsa-workflow-recipient: "delegator_lowperms-generic_slsa3.yml"
-          slsa-build-action-path: ".github/actions/docker-tca"
-          slsa-runner-label: "ubuntu-latest"
+          slsa-workflow-recipient: delegator_lowperms-generic_slsa3.yml
+          slsa-runner-label: ubuntu-latest
+          slsa-build-action-path: .github/actions/docker-tca
           slsa-workflow-inputs: ${{ toJson(inputs) }}
-          slsa-version: "v1.0"
+          slsa-rekor-log-public: ${{ inputs.rekor-log-public }}
+          slsa-version: v1.0
 
   run:
     needs: setup
@@ -58,6 +60,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
+      security-events: write
     with:
       slsa-token: ${{ needs.setup.outputs.slsa-token }}
     secrets:
