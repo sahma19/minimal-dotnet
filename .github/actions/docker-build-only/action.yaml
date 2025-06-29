@@ -33,11 +33,11 @@ runs:
       id: build
       uses: docker/build-push-action@v6
       with:
-        context:     ${{ inputs.docker-context }}
-        file:        ${{ inputs.dockerfile }}
-        push:        false
-        outputs:     type=oci,dest=${{ github.workspace }}/oci-image.tar
-        build-args:  ${{ inputs.build-args }}
+        context: ${{ inputs.docker-context }}
+        file: ${{ inputs.dockerfile }}
+        push: false
+        outputs: type=oci,dest=${{ github.workspace }}/oci-image.tar
+        build-args: ${{ inputs.build-args }}
 
     - name: Create bundle dir
       shell: bash
