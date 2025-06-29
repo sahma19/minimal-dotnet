@@ -29,15 +29,21 @@ runs:
     - name: Set up Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build OCI layout
+    - name: Build OCI archive
       id: build
       uses: docker/build-push-action@v6
       with:
-        context: ${{ inputs.docker-context }}
-        file: ${{ inputs.dockerfile }}
-        push: false
-        outputs: type=oci,dest=${{ github.workspace }}/oci-layout
-        build-args: ${{ inputs.build-args }}
+        context:     ${{ inputs.docker-context }}
+        file:        ${{ inputs.dockerfile }}
+        push:        false
+        outputs:     type=oci,dest=${{ github.workspace }}/oci-image.tar
+        build-args:  ${{ inputs.build-args }}
+
+    - name: Create bundle dir
+      shell: bash
+      run: |
+        mkdir oci-bundle
+        mv "${{ github.workspace }}/oci-image.tar" oci-bundle/
 
     - name: Make unique name
       id: prep
@@ -50,4 +56,4 @@ runs:
       uses: slsa-framework/slsa-github-generator/actions/delegator/secure-upload-folder@v2.1.0
       with:
         name: ${{ steps.prep.outputs.name }}
-        path: ${{ github.workspace }}/oci-layout
+        path: oci-bundle
