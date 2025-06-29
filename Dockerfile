@@ -1,4 +1,4 @@
-ARG VERSION
+ARG VERSION=9.0.6
 
 FROM mcr.microsoft.com/dotnet/aspnet:${VERSION}-alpine3.21 AS base-builder
 
