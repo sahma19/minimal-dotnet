@@ -59,10 +59,15 @@ runs:
           ]
         }
         EOF
+        
+    - name: Copy layout into local dir
+      shell: bash
+      run: cp "../${SLSA_OUTPUTS_DIR}/artifacts-layout.json" artifacts-layout.json
+      
     - name: Generate attestations
       uses: slsa-framework/slsa-github-generator/.github/actions/generate-attestations@v2.1.0
       with:
-        slsa-layout-file: ${{ env.SLSA_OUTPUTS_DIR }}/artifacts-layout.json
+        slsa-layout-file: artifacts-layout.json
         predicate-type: https://slsa.dev/provenance/v1
         predicate-file: predicate.json
         output-folder: attestations-${{ steps.build.outputs.artifact-name }}
