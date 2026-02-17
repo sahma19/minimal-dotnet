@@ -33,14 +33,22 @@ jobs:
             dir=$(dirname "$sol")
             dockerfile="$dir/Dockerfile"
             cfg=$(basename "$dir")
-            tag="$(echo $cfg | tr '[:upper:]' '[:lower:]')"   # ← image tag
-            jq -n \
-              --arg df "$dockerfile" \
-              --arg ctx "$dir" \
-              --arg tag "$tag" \
-              '{dockerfile:$df, context:$ctx, imageTag:$tag, buildArgs:""}'
+          
+            sdk=$(jq -rce '.sdk.version'      "$dir/global.json")
+            runtime=$(jq -rce '.runtime.version' "$dir/global.json")
+          
+            grep -Eo '"[^"]+\.csproj"' "$sol" | tr -d '"' \
+              | grep -Ev '(Test|test|Tests)\.csproj$' | while read -r proj; do
+              rel=$(printf '%s' "$proj" | sed 's|\\|/|g')
+              absproj=$(realpath "$dir/$rel")
+            
+              printf '{"solution":"%s","project":"%s","configuration":"%s","dockerfile":"%s","sdkVersion":"%s","runtimeVersion":"%s"}\n' \
+                    "$sol" "$absproj" "$cfg" "$dockerfile" "$sdk" "$runtime"
+            done
           done | jq -sc > /tmp/matrix.json
+            
           echo "builds=$(cat /tmp/matrix.json)" >> "$GITHUB_ENV"
+
 
   build:
     needs: generate-matrix
@@ -59,27 +67,10 @@ jobs:
       matrix:
         build: ${{ fromJson(needs.generate-matrix.outputs.builds) }}
     with:
+      solution: ${{ matrix.build.solution }}
+      project: ${{ matrix.build.project }}
+      configuration: ${{ matrix.build.configuration }}
       dockerfile: ${{ matrix.build.dockerfile }}
-      context: ${{ matrix.build.context }}
-      build-args: ${{ matrix.build.buildArgs }}
-      image-tag: ${{ matrix.build.imageTag }}
-
-  publish-image:
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        build: ${{ fromJson(needs.generate-matrix.outputs.builds) }}
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Push image to GHCR
-        uses: ./.github/actions/docker-publish-only
-        with:
-          artifact-name: ${{ needs.build.outputs.oci-download-name }}
-          artifact-sha256: ${{ needs.build.outputs.oci-download-sha256 }}
-          image-tag: ${{ matrix.build.imageTag }}
+      sdk-version: ${{ matrix.build.sdkVersion }}
+      runtime-version: ${{ matrix.build.runtimeVersion }}
+      dry-run: ${{ inputs.dry-run }}

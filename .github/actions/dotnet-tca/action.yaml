@@ -1,58 +1,61 @@
-name: Docker TCA – build & upload OCI bundle
-
-description: >
-  Builds the container image **offline** (type=oci), uploads it with
-  secure-upload-folder, and writes a provenance layout.
+name: SLSA Callback for .NET Build
 
 inputs:
-  dockerfile:
+  slsa-workflow-inputs:
+    description: "JSON string of inputs"
     required: true
-    description: "dockerfile"
-  context:
-    required: false
-    default: "."
-    description: "context"
-  build-args:
-    required: false
-    description: "build args"
-  image-tag:
+  slsa-layout-file:
+    description: "Path to the layout file"
     required: true
-    description: "image tag"
-
-outputs:
-  oci-download-name:
-    value: ${{ steps.build.outputs.artifact-name }}
-    description: "oci-download name"
-  oci-download-sha256:
-    value: ${{ steps.build.outputs.artifact-sha256 }}
-    description: "oci download sha"
+  slsa-workflow-secret1:
+    description: "GitHub token (or other secret)"
+    required: false
 
 runs:
-  using: composite
+  using: "composite"
   steps:
-    - id: build
-      name: Build OCI (no push)
-      uses: ./../__TOOL_CHECKOUT_DIR__/./.github/actions/docker-build-only
-      with:
-        dockerfile:     ${{ inputs.dockerfile }}
-        docker-context: ${{ inputs.context }}
-        build-args:     ${{ inputs.build-args }}
-        tags: ${{ inputs.image-tag }}
-        
-
-    - name: Write provenance layout
+    - name: Parse JSON inputs into env
+      id: parse
       shell: bash
       run: |
-        cat > "../${SLSA_OUTPUTS_DIR}/artifacts-layout.json" <<EOF
+        echo "Parsing inputs.json"
+        echo '${{ inputs.slsa-workflow-inputs }}' > inputs.json
+
+        if ! jq empty inputs.json 2>/dev/null; then
+          echo "::error::Invalid JSON in slsa-workflow-inputs"
+          cat inputs.json
+          exit 1
+        fi
+
+        jq -r 'to_entries[] | "\(.key)=\(.value | tostring)"' inputs.json >> "$GITHUB_ENV"
+
+    - name: Run dotnet-build logic
+      uses: ./.github/actions/dotnet-build
+      with:
+        solution:        ${{ env.solution }}
+        project:         ${{ env.project }}
+        configuration:   ${{ env.configuration }}
+        dockerfile:      ${{ env.dockerfile }}
+        dry-run:         ${{ env.dry-run }}
+        sdk-version:     ${{ env.sdk-version }}
+        runtime-version: ${{ env.runtime-version }}
+
+    - name: Write SLSA layout file
+      shell: bash
+      run: |
+        mkdir -p "$(dirname "${{ inputs.slsa-layout-file }}")"
+        cat <<EOF > "${{ inputs.slsa-layout-file }}"
         {
           "version": 1,
           "attestations": [
             {
-              "name": "${{ inputs.image-tag }}",
+              "name": "${{ env.configuration }}-${{ env.version }}",
               "subjects": [
                 {
-                  "name": "ghcr.io/${{ github.repository_owner }}/$(basename "${{ github.repository }}"):${{ inputs.image-tag }}",
-                  "digest": { "sha256": "${{ steps.build.outputs.artifact-sha256 }}" }
+                  "name": "ghcr.io/${{ github.repository_owner }}/${{ env.configuration }}:${{ env.version }}",
+                  "digest": {
+                    "sha256": "${{ steps.build.outputs.digest }}"
+                  }
                 }
               ]
             }

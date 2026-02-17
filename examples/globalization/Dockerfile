@@ -1,4 +1,4 @@
-ARG SDK_VERSION=9.0.301
+ARG SDK_VERSION
 FROM mcr.microsoft.com/dotnet/sdk:${SDK_VERSION} AS prepare
 WORKDIR /
 
